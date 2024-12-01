@@ -2,6 +2,7 @@
 
 from argparse import ArgumentParser
 import os
+import sqlite3
 
 class AddonInfo:
 	""" Addon Info Class
@@ -11,16 +12,16 @@ class AddonInfo:
 		print( "AddonInfo: %s" % (path,) )
 
 class AddonIterator:
+	""" Becomes a wrapper around the list iterator """
+	""" TODO:  get the iterator from os.scandir, have my __next__ call next on scandir, and test for is_dir. """
 	def __init__( self, basePath ):
 		print( basePath )
 		self.basePath = basePath
-		self.iter = iter([ f.path for f in os.scandir( basePath ) if f.is_dir() ])
 	def __iter__( self):
+		self.iter = iter([ f.path for f in os.scandir( self.basePath ) if f.is_dir() ])
 		return self   # The iterator object is returned
 	def __next__( self):
 		return AddonInfo(next(self.iter))
-		# return AddonInfo(path)
-		raise StopIteration
 
 class WoWInstance:
 	""" WoWInstance Class
