@@ -7,23 +7,35 @@ class AddonInfo:
 	""" Addon Info Class
 	Has access methods to get addon info
 	"""
-	pass
+	def __init__( self, path):
+		print( "AddonInfo: %s" % (path,) )
 
 class AddonIterator:
-	def __init__(self, initValue):
-		pass
-	def __iter__(self):
+	def __init__( self, basePath ):
+		print( basePath )
+		self.basePath = basePath
+		self.iter = iter([ f.path for f in os.scandir( basePath ) if f.is_dir() ])
+	def __iter__( self):
 		return self   # The iterator object is returned
-	def __next__(self):
+	def __next__( self):
+		return AddonInfo(next(self.iter))
 		# return AddonInfo(path)
 		raise StopIteration
 
 class WoWInstance:
 	""" WoWInstance Class
 	This class takes a path, confirms the path, exposes a few helper functions.
+	The path should point to the base install path.  folders like _retail_ should be here.
 	"""
-	def __init__(self,path):
+	__subPaths = ["_retail_", "Interface", "Addons"]
+	def __init__( self,path):
+		for subPathLen in range(len( self.__subPaths)+1):
+			checkPath = os.path.join( path, *self.__subPaths[:subPathLen])
+			if not os.path.exists( checkPath):
+				print( "%s does not exist." % ( checkPath,) )
+			self.addonPath = checkPath
 		self.path = path
+		self.addons = AddonIterator( self.addonPath )
 
 	def something(self):
 		pass
@@ -36,9 +48,19 @@ if __name__ == "__main__":
 
 	options = parser.parse_args()
 
+	wowInstances = []
 	for wowpath in options.wowpath:
-		print( wowpath )
+		wowInstances.append( WoWInstance(wowpath) )
+	print( wowInstances )
 
-		print( "Warcraft path: %s" % (wowpath, ) )
+	for instance in wowInstances:
+		for addon in instance.addons:
+			print( addon )
 
-		print( os.path.exists( wowpath ) )
+
+
+	# print( wowpath )
+
+	# print( "Warcraft path: %s" % (wowpath, ) )
+
+	# print( os.path.exists( wowpath ) )
