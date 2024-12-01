@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from optparse import OptionParser
+import os
 
 if __name__ == "__main__":
 	parser = OptionParser()
@@ -10,3 +11,5 @@ if __name__ == "__main__":
 	(options, args) = parser.parse_args()
 
 	print( "Warcraft path: %s" % (options.wowpath, ) )
+
+	print( os.path.exists( options.wowpath ) )
