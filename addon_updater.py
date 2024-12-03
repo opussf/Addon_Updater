@@ -2,6 +2,7 @@
 
 from argparse import ArgumentParser
 import os
+import logging
 import sqlite3
 
 class AddonInfo:
@@ -18,6 +19,7 @@ class AddonIterator:
 		print( basePath )
 		self.basePath = basePath
 	def __iter__( self):
+		#self.scandirIterator = os.scandir( self.basePath )
 		self.iter = iter([ f.path for f in os.scandir( self.basePath ) if f.is_dir() ])
 		return self   # The iterator object is returned
 	def __next__( self):
@@ -46,6 +48,7 @@ if __name__ == "__main__":
 
 	parser.add_argument( "-p", "--path", dest="wowpath", nargs="*", metavar="PATH", default=["/Applications/World of Warcraft/"],
 			help="Path to look for addons.")
+
 
 	options = parser.parse_args()
 
