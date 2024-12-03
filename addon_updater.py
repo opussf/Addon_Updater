@@ -14,16 +14,18 @@ class AddonInfo:
 
 class AddonIterator:
 	""" Becomes a wrapper around the list iterator """
-	""" TODO:  get the iterator from os.scandir, have my __next__ call next on scandir, and test for is_dir. """
 	def __init__( self, basePath ):
 		print( basePath )
 		self.basePath = basePath
 	def __iter__( self):
-		#self.scandirIterator = os.scandir( self.basePath )
-		self.iter = iter([ f.path for f in os.scandir( self.basePath ) if f.is_dir() ])
+		self.scandirIterator = os.scandir( self.basePath )
 		return self   # The iterator object is returned
 	def __next__( self):
-		return AddonInfo(next(self.iter))
+		while True:
+			f = next( self.scandirIterator )
+			if f.is_dir():
+				break
+		return AddonInfo(f)
 
 class WoWInstance:
 	""" WoWInstance Class
