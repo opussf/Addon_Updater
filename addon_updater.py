@@ -2,7 +2,7 @@
 
 from argparse import ArgumentParser
 import os
-import logging
+# import logging
 import sqlite3
 
 class AddonInfo:
@@ -33,7 +33,7 @@ class WoWInstance:
 	The path should point to the base install path.  folders like _retail_ should be here.
 	"""
 	__subPaths = ["_retail_", "Interface", "Addons"]
-	def __init__( self,path):
+	def __init__( self, path):
 		for subPathLen in range(len( self.__subPaths)+1):
 			checkPath = os.path.join( path, *self.__subPaths[:subPathLen])
 			if not os.path.exists( checkPath):
@@ -49,10 +49,13 @@ if __name__ == "__main__":
 	parser = ArgumentParser(description="WoW Addon Updater version ")
 
 	parser.add_argument( "-p", "--path", dest="wowpath", nargs="*", metavar="PATH", default=["/Applications/World of Warcraft/"],
-			help="Path to look for addons.")
+			help="Path to look for addons." )
+	parser.add_argument( "--curseforge", dest="addcurseforge", nargs="*", metavar="ADDONID",
+			help="Add addon id from curseforge." )
 
 
 	options = parser.parse_args()
+	print( options )
 
 	wowInstances = []
 	for wowpath in options.wowpath:
