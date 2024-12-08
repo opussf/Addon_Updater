@@ -2,7 +2,7 @@
 
 from argparse import ArgumentParser
 import os
-# import logging
+import logging
 import sqlite3
 
 class DataStorage:
@@ -125,10 +125,23 @@ if __name__ == "__main__":
 			help="Path to look for addons." )
 	parser.add_argument( "--curseforge", dest="addcurseforge", nargs="*", metavar="ADDONID",
 			help="Add addon id from curseforge." )
-
+	parser.add_argument( "--github", dest="addgithub", nargs="*", metavar="REPOPATH",
+			help="Add addon from github." )
+	parser.add_argument( "-v", "--verbose", dest="verbose", action="store_true", default=False,
+			help="Verbose mode." )
 
 	options = parser.parse_args()
-	print( options )
+
+	logger = logging.getLogger("addon_uppdater")
+	logger.setLevel(logging.DEBUG)
+	sh = logging.StreamHandler()
+	sh.setLevel(options.verbose and logging.DEBUG or logging.INFO)
+
+	formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+	sh.setFormatter(formatter)
+	logger.addHandler(sh)
+
+	logger.info("Starting")
 
 	myInstalls = Installs( DataStorage() )
 	if options.wowpaths:
