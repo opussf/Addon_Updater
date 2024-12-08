@@ -4,6 +4,7 @@ from argparse import ArgumentParser
 import os
 import logging
 import sqlite3
+import threading
 
 class DataStorage:
 	""" Singleton datastorage object """
@@ -18,8 +19,10 @@ class DataStorage:
 		return cls._instance
 
 	def __init__( self ):
+		self.logger = logging.getLogger("addon_uppdater")
 		self.fullPath = os.path.expanduser( self.basePath )
 		if not os.path.exists(self.fullPath):
+			self.logger.debug( "Creating path: %s" % (self.fullPath,) )
 			os.makedirs( self.fullPath, exist_ok=True )
 		# Make the sqllite storage file, connection, and cursor
 		self.sqliteFile = os.path.join( self.fullPath, self.sqliteFilename )
@@ -36,24 +39,20 @@ class DataStorage:
 		print( "On delete" )
 		self.connection.close()
 
-class Cache:
-	path = "cache"
-	def __init__( self ):
-		print( "Cache.__init__" )
-
 class Installs:
 	def __init__( self, dataStorage ):
+		self.logger = logging.getLogger("addon_uppdater")
 		self.dataStorage = dataStorage
 		self._wowpaths = []
 
 		self.cursor = self.dataStorage.cursor
 		try:
 			self.cursor.execute( "CREATE TABLE installs(id integer primary key, path string unique)" )
+			self.logger.debug( "Installs creating table." )
 		except sqlite3.OperationalError:
 			pass
-		print( "installs init")
 		for row in self.cursor.execute("SELECT id, path from installs;"):
-			print( "Row: ", row )
+			self.logger.debug( "Row: %s" % (row,) )
 			self._wowpaths.append( row[1] )
 
 	@property
@@ -70,6 +69,11 @@ class Installs:
 			except sqlite3.IntegrityError:
 				pass
 		self.dataStorage.commit()
+
+class Cache:
+	path = "cache"
+	def __init__( self, dataStorage ):
+		print( "Cache.__init__" )
 
 class AddonData:
 	"""Addons:
@@ -118,6 +122,9 @@ class WoWInstance:
 	def something(self):
 		pass
 
+class ThreadedHTTPS:
+	pass
+
 if __name__ == "__main__":
 	parser = ArgumentParser(description="WoW Addon Updater version ")
 
@@ -149,7 +156,7 @@ if __name__ == "__main__":
 		myInstalls.wowpaths = options.wowpaths
 
 	myWowPaths = myInstalls.wowpaths
-	print( "myWowPaths: %s" % (myWowPaths,) )
+	logger.debug( "myWowPaths: %s" % (myWowPaths,) )
 
 
 
