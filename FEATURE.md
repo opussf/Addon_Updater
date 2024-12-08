@@ -13,3 +13,13 @@ Wow Install location
 Addons:
 Service | addonID | current version
 
+
+
+
+Installs:
+id | path
+
+Addons:
+installID | service | addonID | current version
+
+

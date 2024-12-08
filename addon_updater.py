@@ -29,6 +29,9 @@ class DataStorage:
 		self.cursor.execute("VACUUM")
 		self.connection.commit()
 
+	def commit( self ):
+		self.connection.commit()
+
 	def __del__( self ):
 		print( "On delete" )
 		self.connection.close()
@@ -38,36 +41,40 @@ class Cache:
 	def __init__( self ):
 		print( "Cache.__init__" )
 
-class Options:
-	def __init__( self ):
-		self.cursor = DataStorage().cursor
+class Installs:
+	def __init__( self, dataStorage ):
+		self.dataStorage = dataStorage
+		self._wowpaths = []
+
+		self.cursor = self.dataStorage.cursor
 		try:
-			self.cursor.execute( "CREATE TABLE config(wowpath type UNIQUE)" )
+			self.cursor.execute( "CREATE TABLE installs(id integer primary key, path string unique)" )
 		except sqlite3.OperationalError:
 			pass
-		print( "option init")
-		for row in self.cursor.execute("SELECT wowpath from config"):
+		print( "installs init")
+		for row in self.cursor.execute("SELECT id, path from installs;"):
 			print( "Row: ", row )
-			self._wowpath = row[0]
+			self._wowpaths.append( row[1] )
 
 	@property
-	def wowpath(self):
-		return self._wowpath
+	def wowpaths(self):
+		print("Get property")
+		return self._wowpaths
 
-	@wowpath.setter
-	def wowpath(self,value):
-		self._wowpath = value
-		try:
-			self.cursor.execute( "INSERT INTO config values(?)", (self._wowpath,) )
-		except sqlite3.IntegrityError:
-			pass
-
-
-
-# Addons:
-# Service | addonID | current version
+	@wowpaths.setter
+	def wowpaths(self,value):
+		self._wowpaths = value
+		for path in self._wowpaths:
+			try:
+				self.cursor.execute( "INSERT INTO installs (path) values(?)", (path,) )
+			except sqlite3.IntegrityError:
+				pass
+		self.dataStorage.commit()
 
 class AddonData:
+	"""Addons:
+		installID | service | addonID | current version
+	"""
 	def __init__( self ):
 		self.cursor = DataStorage()
 
@@ -114,7 +121,7 @@ class WoWInstance:
 if __name__ == "__main__":
 	parser = ArgumentParser(description="WoW Addon Updater version ")
 
-	parser.add_argument( "-p", "--path", dest="wowpath", nargs="*", metavar="PATH",
+	parser.add_argument( "-p", "--paths", dest="wowpaths", nargs="*", metavar="PATH",
 			help="Path to look for addons." )
 	parser.add_argument( "--curseforge", dest="addcurseforge", nargs="*", metavar="ADDONID",
 			help="Add addon id from curseforge." )
@@ -123,14 +130,23 @@ if __name__ == "__main__":
 	options = parser.parse_args()
 	print( options )
 
-	myOptions = Options()
-	addonData = AddonData()
+	myInstalls = Installs( DataStorage() )
+	if options.wowpaths:
+		print( "wowpath: %s (%s)" % (options.wowpaths,type(options.wowpaths)) )
+		myInstalls.wowpaths = options.wowpaths
 
-	if options.wowpath:
-		print(options.wowpath[0])
-		myOptions.wowpath = options.wowpath[0]
+	myWowPaths = myInstalls.wowpaths
+	print( "myWowPaths: %s" % (myWowPaths,) )
 
-	print(options.wowpath)
+
+
+	# addonData = AddonData()
+
+	# if options.wowpath:
+	# 	print(options.wowpath[0])
+	# 	myOptions.wowpath = options.wowpath[0]
+
+	# print(options.wowpath)
 
 
 	# wowInstances = []
