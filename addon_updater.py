@@ -13,13 +13,15 @@ class DataStorage:
 	sqliteFilename = "addons.db"
 	# paths = ["cache","working"]
 
-	def __new__( cls, *args, **kwargs ):
+	def __new__(cls, *args, **kwargs):
 		if not cls._instance:
 			cls._instance = super().__new__(cls)
 		return cls._instance
 
-	def __init__( self ):
-		self.logger = logging.getLogger("addon_uppdater")
+	def __init__(self, logger: logging.Logger | None = None):
+		self.logger = logger
+		if not logger:
+			self.logger = logging.getLogger("addon_uppdater")
 		self.fullPath = os.path.expanduser( self.basePath )
 		if not os.path.exists(self.fullPath):
 			self.logger.debug( "Creating path: %s" % (self.fullPath,) )
@@ -32,15 +34,15 @@ class DataStorage:
 		self.cursor.execute("VACUUM")
 		self.connection.commit()
 
-	def commit( self ):
+	def commit(self):
+		self.logger.debug("commit")
 		self.connection.commit()
 
-	def __del__( self ):
-		print( "On delete" )
+	def __del__(self):
 		self.connection.close()
 
 class Installs:
-	def __init__( self, dataStorage ):
+	def __init__(self, dataStorage):
 		self.logger = logging.getLogger("addon_uppdater")
 		self.dataStorage = dataStorage
 		self._wowpaths = []
@@ -61,7 +63,7 @@ class Installs:
 		return self._wowpaths
 
 	@wowpaths.setter
-	def wowpaths(self,value):
+	def wowpaths(self, value):
 		self._wowpaths = value
 		for path in self._wowpaths:
 			try:
@@ -125,20 +127,7 @@ class WoWInstance:
 class ThreadedHTTPS:
 	pass
 
-if __name__ == "__main__":
-	parser = ArgumentParser(description="WoW Addon Updater version ")
-
-	parser.add_argument( "-p", "--paths", dest="wowpaths", nargs="*", metavar="PATH",
-			help="Path to look for addons." )
-	parser.add_argument( "--curseforge", dest="addcurseforge", nargs="*", metavar="ADDONID",
-			help="Add addon id from curseforge." )
-	parser.add_argument( "--github", dest="addgithub", nargs="*", metavar="REPOPATH",
-			help="Add addon from github." )
-	parser.add_argument( "-v", "--verbose", dest="verbose", action="store_true", default=False,
-			help="Verbose mode." )
-
-	options = parser.parse_args()
-
+def setupLogger():
 	logger = logging.getLogger("addon_uppdater")
 	logger.setLevel(logging.DEBUG)
 	sh = logging.StreamHandler()
@@ -148,6 +137,23 @@ if __name__ == "__main__":
 	sh.setFormatter(formatter)
 	logger.addHandler(sh)
 
+	return logger
+
+if __name__ == "__main__":
+	parser = ArgumentParser(description="WoW Addon Updater version ")
+
+	parser.add_argument( "-p", "--paths", dest="wowpaths", nargs="*", metavar="PATH",
+			help="Path to look for addons." )
+	parser.add_argument( "--curseforge", dest="curseforgeids", nargs="*", metavar="ADDONID",
+			help="Add addon id from curseforge." )
+	parser.add_argument( "--github", dest="githubpaths", nargs="*", metavar="REPOPATH",
+			help="Add addon from github." )
+	parser.add_argument( "-v", "--verbose", dest="verbose", action="store_true", default=False,
+			help="Verbose mode." )
+
+	options = parser.parse_args()
+
+	logger = setupLogger()
 	logger.info("Starting")
 
 	myInstalls = Installs( DataStorage() )
@@ -158,6 +164,9 @@ if __name__ == "__main__":
 	myWowPaths = myInstalls.wowpaths
 	logger.debug( "myWowPaths: %s" % (myWowPaths,) )
 
+
+	logger.info(options.curseforgeids)
+	logger.info(options.githubpaths)
 
 
 	# addonData = AddonData()
