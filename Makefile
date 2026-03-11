@@ -7,15 +7,16 @@ all: test
 
 clean:
 	rm -rf packages
-	rm -f packages-dev-installed
+	rm -rf target
+	rm -rf src/__pycache__
 
-.packages-dev-installed: requirements.txt requirements-dev.txt
+packages/installed: requirements.txt requirements-dev.txt
 	$(PIP) install -r requirements-dev.txt --target=./packages
-	touch packages-dev-installed
+	touch packages/installed
 
-lint: .packages-dev-installed
-	PYTHONPATH=packages:src $(PYTHON) -m flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --ignore=W191
-	PYTHONPATH=packages:src $(PYTHON) -m flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --ignore=W191,E128
+lint: packages/installed
+	PYTHONPATH=packages:src $(PYTHON) -m flake8 src/ tests/ --count --select=E9,F63,F7,F82 --show-source --statistics --ignore=W191
+	PYTHONPATH=packages:src $(PYTHON) -m flake8 src/ tests/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --ignore=W191,E128
 
-test: .packages-dev-installed lint
+test: packages/installed lint
 	PYTHONPATH=packages:src $(PYTHON) -m pytest --cov=pybattlenet --cov-report=xml:cobertura.xml --cov-report=html  --cov-report=term-missing -v
