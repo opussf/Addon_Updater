@@ -4,7 +4,8 @@ from argparse import ArgumentParser
 import os
 import logging
 import sqlite3
-import threading
+# import threading
+
 
 class DataStorage:
 	""" Singleton datastorage object """
@@ -22,13 +23,13 @@ class DataStorage:
 		self.logger = logger
 		if not logger:
 			self.logger = logging.getLogger("addon_uppdater")
-		self.fullPath = os.path.expanduser( self.basePath )
+		self.fullPath = os.path.expanduser(self.basePath)
 		if not os.path.exists(self.fullPath):
-			self.logger.debug( "Creating path: %s" % (self.fullPath,) )
-			os.makedirs( self.fullPath, exist_ok=True )
+			self.logger.debug("Creating path: %s" % (self.fullPath,))
+			os.makedirs(self.fullPath, exist_ok=True)
 		# Make the sqllite storage file, connection, and cursor
-		self.sqliteFile = os.path.join( self.fullPath, self.sqliteFilename )
-		self.connection = sqlite3.connect( self.sqliteFile )
+		self.sqliteFile = os.path.join(self.fullPath, self.sqliteFilename)
+		self.connection = sqlite3.connect(self.sqliteFile)
 
 		self.cursor = self.connection.cursor()
 		self.cursor.execute("VACUUM")
@@ -41,6 +42,7 @@ class DataStorage:
 	def __del__(self):
 		self.connection.close()
 
+
 class Installs:
 	def __init__(self, dataStorage):
 		self.logger = logging.getLogger("addon_uppdater")
@@ -49,13 +51,13 @@ class Installs:
 
 		self.cursor = self.dataStorage.cursor
 		try:
-			self.cursor.execute( "CREATE TABLE installs(id integer primary key, path string unique)" )
-			self.logger.debug( "Installs creating table." )
+			self.cursor.execute("CREATE TABLE installs(id integer primary key, path string unique)")
+			self.logger.debug("Installs creating table.")
 		except sqlite3.OperationalError:
 			pass
 		for row in self.cursor.execute("SELECT id, path from installs;"):
-			self.logger.debug( "Row: %s" % (row,) )
-			self._wowpaths.append( row[1] )
+			self.logger.debug("Row: %s" % (row,))
+			self._wowpaths.append(row[1])
 
 	@property
 	def wowpaths(self):
@@ -67,44 +69,52 @@ class Installs:
 		self._wowpaths = value
 		for path in self._wowpaths:
 			try:
-				self.cursor.execute( "INSERT INTO installs (path) values(?)", (path,) )
+				self.cursor.execute("INSERT INTO installs (path) values(?)", (path,))
 			except sqlite3.IntegrityError:
 				pass
 		self.dataStorage.commit()
 
+
 class Cache:
 	path = "cache"
-	def __init__( self, dataStorage ):
-		print( "Cache.__init__" )
+
+	def __init__(self, dataStorage):
+		print("Cache.__init__")
+
 
 class AddonData:
 	"""Addons:
 		installID | service | addonID | current version
 	"""
-	def __init__( self ):
+	def __init__(self):
 		self.cursor = DataStorage()
+
 
 class AddonInfo:
 	""" Addon Info Class
 	Has access methods to get addon info
 	"""
-	def __init__( self, path):
-		print( "AddonInfo: %s" % (path,) )
+	def __init__(self, path):
+		print("AddonInfo: %s" % (path,))
+
 
 class AddonIterator:
 	""" Becomes a wrapper around the list iterator """
-	def __init__( self, basePath ):
-		print( basePath )
+	def __init__(self, basePath):
+		print(basePath)
 		self.basePath = basePath
-	def __iter__( self):
-		self.scandirIterator = os.scandir( self.basePath )
+
+	def __iter__(self):
+		self.scandirIterator = os.scandir(self.basePath)
 		return self   # The iterator object is returned
-	def __next__( self):
+
+	def __next__(self):
 		while True:
-			f = next( self.scandirIterator )
+			f = next(self.scandirIterator)
 			if f.is_dir():
 				break
 		return AddonInfo(f)
+
 
 class WoWInstance:
 	""" WoWInstance Class
@@ -112,20 +122,23 @@ class WoWInstance:
 	The path should point to the base install path.  folders like _retail_ should be here.
 	"""
 	__subPaths = ["_retail_", "Interface", "Addons"]
-	def __init__( self, path):
-		for subPathLen in range(len( self.__subPaths)+1):
-			checkPath = os.path.join( path, *self.__subPaths[:subPathLen])
-			if not os.path.exists( checkPath):
-				print( "%s does not exist." % ( checkPath,) )
+
+	def __init__(self, path):
+		for subPathLen in range(len(self.__subPaths) + 1):
+			checkPath = os.path.join(path, *self.__subPaths[:subPathLen])
+			if not os.path.exists(checkPath):
+				print("%s does not exist." % (checkPath,))
 			self.addonPath = checkPath
 		self.path = path
-		self.addons = AddonIterator( self.addonPath )
+		self.addons = AddonIterator(self.addonPath)
 
 	def something(self):
 		pass
 
+
 class ThreadedHTTPS:
 	pass
+
 
 def setupLogger():
 	logger = logging.getLogger("addon_uppdater")
@@ -139,58 +152,31 @@ def setupLogger():
 
 	return logger
 
+
 if __name__ == "__main__":
 	parser = ArgumentParser(description="WoW Addon Updater version ")
 
-	parser.add_argument( "-p", "--paths", dest="wowpaths", nargs="*", metavar="PATH",
-			help="Path to look for addons." )
-	parser.add_argument( "--curseforge", dest="curseforgeids", nargs="*", metavar="ADDONID",
-			help="Add addon id from curseforge." )
-	parser.add_argument( "--github", dest="githubpaths", nargs="*", metavar="REPOPATH",
-			help="Add addon from github." )
-	parser.add_argument( "-v", "--verbose", dest="verbose", action="store_true", default=False,
-			help="Verbose mode." )
+	parser.add_argument("-p", "--paths", dest="wowpaths", nargs="*", metavar="PATH",
+			help="Path to look for addons.")
+	parser.add_argument("--curseforge", dest="curseforgeids", nargs="*", metavar="ADDONID",
+			help="Add addon id from curseforge.")
+	parser.add_argument("--github", dest="githubpaths", nargs="*", metavar="REPOPATH",
+			help="Add addon from github.")
+	parser.add_argument("-v", "--verbose", dest="verbose", action="store_true", default=False,
+			help="Verbose mode.")
 
 	options = parser.parse_args()
 
 	logger = setupLogger()
 	logger.info("Starting")
 
-	myInstalls = Installs( DataStorage() )
+	myInstalls = Installs(DataStorage())
 	if options.wowpaths:
-		print( "wowpath: %s (%s)" % (options.wowpaths,type(options.wowpaths)) )
+		print("wowpath: %s (%s)" % (options.wowpaths, type(options.wowpaths)))
 		myInstalls.wowpaths = options.wowpaths
 
 	myWowPaths = myInstalls.wowpaths
-	logger.debug( "myWowPaths: %s" % (myWowPaths,) )
-
+	logger.debug("myWowPaths: %s" % (myWowPaths,))
 
 	logger.info(options.curseforgeids)
 	logger.info(options.githubpaths)
-
-
-	# addonData = AddonData()
-
-	# if options.wowpath:
-	# 	print(options.wowpath[0])
-	# 	myOptions.wowpath = options.wowpath[0]
-
-	# print(options.wowpath)
-
-
-	# wowInstances = []
-	# for wowpath in options.wowpath:
-	# 	wowInstances.append( WoWInstance(wowpath) )
-	# print( wowInstances )
-
-	# for instance in wowInstances:
-	# 	for addon in instance.addons:
-	# 		print( addon )
-
-
-
-	# print( wowpath )
-
-	# print( "Warcraft path: %s" % (wowpath, ) )
-
-	# print( os.path.exists( wowpath ) )

@@ -1,5 +1,5 @@
-import pytest
-import addon_updater
+# import pytest
+# import addon_updater
 
 
 def test_example():

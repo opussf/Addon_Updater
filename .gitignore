@@ -5,4 +5,4 @@ target/
 __pycache__/
 
 .coverage
-cobertura.xml
+coverage.xml
