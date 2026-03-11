@@ -7,7 +7,7 @@ all: test
 
 clean:
 	rm -rf packages
-	rm -rf target
+	rm -rfv target
 	rm -rf src/__pycache__
 
 packages/installed: requirements.txt requirements-dev.txt
@@ -19,4 +19,4 @@ lint: packages/installed
 	PYTHONPATH=packages:src $(PYTHON) -m flake8 src/ tests/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --ignore=W191,E128
 
 test: packages/installed lint
-	PYTHONPATH=packages:src $(PYTHON) -m pytest --cov=pybattlenet --cov-report=xml:cobertura.xml --cov-report=html  --cov-report=term-missing -v
+	PYTHONPATH=packages:src $(PYTHON) -m pytest
