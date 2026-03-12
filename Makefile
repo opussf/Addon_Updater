@@ -11,7 +11,7 @@ clean:
 	rm -rf src/__pycache__
 
 packages/installed: requirements.txt requirements-dev.txt
-	$(PIP) install -r requirements-dev.txt --target=./packages
+	$(PIP) install -r requirements-dev.txt --target=./packages --upgrade
 	touch packages/installed
 
 lint: packages/installed

@@ -4,6 +4,9 @@ from argparse import ArgumentParser
 import os
 import logging
 import sqlite3
+import aiohttp
+import asyncio
+
 # import threading
 
 
@@ -78,8 +81,11 @@ class Installs:
 class Cache:
 	path = "cache"
 
-	def __init__(self, dataStorage):
-		print("Cache.__init__")
+	def __init__(self, dataStorage: DataStorage, logger: logging.Logger | None):
+		self.logger = logger
+		if not logger:
+			self.logger = logging.getLogger("addon_uppdater")
+		self.logger.debug("Cache.__init__")
 
 
 class AddonData:
@@ -116,6 +122,16 @@ class AddonIterator:
 		return AddonInfo(f)
 
 
+class Curseforge:
+	"""Just get something started"""
+	def __init__(self, id: int, logger: logging.Logger | None = None):
+		self.logger = logger
+		if not logger:
+			self.logger = logging.getLogger("addon_uppdater")
+		self.id = id
+		self.logger.debug(f"Starting with {self.id}")
+
+
 class WoWInstance:
 	""" WoWInstance Class
 	This class takes a path, confirms the path, exposes a few helper functions.
@@ -134,10 +150,6 @@ class WoWInstance:
 
 	def something(self):
 		pass
-
-
-class ThreadedHTTPS:
-	pass
 
 
 def setupLogger():
