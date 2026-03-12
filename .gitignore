@@ -1,0 +1,8 @@
+runmany.sh
+packages/
+target/
+
+__pycache__/
+
+.coverage
+coverage.xml
