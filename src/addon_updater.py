@@ -46,6 +46,19 @@ class DataStorage:
 		self.connection.close()
 
 
+class Cache:
+	path = "cache"
+
+	def __init__(self, dataStorage: DataStorage, logger: logging.Logger | None):
+		self.logger = logger
+		if not logger:
+			self.logger = logging.getLogger("addon_uppdater")
+		self.logger.debug("Cache.__init__")
+
+
+
+
+
 class Installs:
 	def __init__(self, dataStorage):
 		self.logger = logging.getLogger("addon_uppdater")
@@ -76,16 +89,6 @@ class Installs:
 			except sqlite3.IntegrityError:
 				pass
 		self.dataStorage.commit()
-
-
-class Cache:
-	path = "cache"
-
-	def __init__(self, dataStorage: DataStorage, logger: logging.Logger | None):
-		self.logger = logger
-		if not logger:
-			self.logger = logging.getLogger("addon_uppdater")
-		self.logger.debug("Cache.__init__")
 
 
 class AddonData:
