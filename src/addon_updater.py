@@ -13,7 +13,7 @@ import asyncio
 class DataStorage:
 	""" Singleton datastorage object """
 	_instance = None
-	basePath = "~/.addon_uppdater"
+	basePath = "~/.addon_updater"
 	sqliteFilename = "addons.db"
 	# paths = ["cache","working"]
 
@@ -25,7 +25,7 @@ class DataStorage:
 	def __init__(self, logger: logging.Logger | None = None):
 		self.logger = logger
 		if not logger:
-			self.logger = logging.getLogger("addon_uppdater")
+			self.logger = logging.getLogger("addon_updater")
 		self.fullPath = os.path.expanduser(self.basePath)
 		if not os.path.exists(self.fullPath):
 			self.logger.debug("Creating path: %s" % (self.fullPath,))
@@ -49,19 +49,47 @@ class DataStorage:
 class Cache:
 	path = "cache"
 
-	def __init__(self, dataStorage: DataStorage, logger: logging.Logger | None):
+	def __init__(self, dataStorage: DataStorage, logger: logging.Logger | None = None):
 		self.logger = logger
 		if not logger:
-			self.logger = logging.getLogger("addon_uppdater")
+			self.logger = logging.getLogger("addon_updater")
 		self.logger.debug("Cache.__init__")
 
 
+class AddonData:
+	"""Addons:
+		installID | service | addonID | current version
+	"""
+	def __init__(self, logger: logging.Logger | None = None):
+		self.logger = logger
+		if not logger:
+			self.logger = logging.getLogger("addon_updater")
+		self.cursor = DataStorage()
 
+
+class Curseforge(AddonData):
+	"""Just get something started"""
+	def __init__(self, cfID: int, logger: logging.Logger | None = None):
+		print(logger)
+		super().__init__(logger)
+		self.cfID = cfID
+		self.logger.debug(f"Starting {self.__class__.__name__} with {self.cfID}")
+
+	def getFilesURL(self) -> str:
+		pass
+
+
+class GitHub(AddonData):
+	"""Also to just get started"""
+	def __init__(self, path: str, logger: logging.Logger | None = None):
+		super().__init__(logger)
+		self.path = path
+		self.logger.debug(f"Starting {self.__class__.__name__} with {self.path}")
 
 
 class Installs:
 	def __init__(self, dataStorage):
-		self.logger = logging.getLogger("addon_uppdater")
+		self.logger = logging.getLogger("addon_updater")
 		self.dataStorage = dataStorage
 		self._wowpaths = []
 
@@ -91,14 +119,6 @@ class Installs:
 		self.dataStorage.commit()
 
 
-class AddonData:
-	"""Addons:
-		installID | service | addonID | current version
-	"""
-	def __init__(self):
-		self.cursor = DataStorage()
-
-
 class AddonInfo:
 	""" Addon Info Class
 	Has access methods to get addon info
@@ -125,16 +145,6 @@ class AddonIterator:
 		return AddonInfo(f)
 
 
-class Curseforge:
-	"""Just get something started"""
-	def __init__(self, id: int, logger: logging.Logger | None = None):
-		self.logger = logger
-		if not logger:
-			self.logger = logging.getLogger("addon_uppdater")
-		self.id = id
-		self.logger.debug(f"Starting with {self.id}")
-
-
 class WoWInstance:
 	""" WoWInstance Class
 	This class takes a path, confirms the path, exposes a few helper functions.
@@ -156,7 +166,7 @@ class WoWInstance:
 
 
 def setupLogger():
-	logger = logging.getLogger("addon_uppdater")
+	logger = logging.getLogger("addon_updater")
 	logger.setLevel(logging.DEBUG)
 	sh = logging.StreamHandler()
 	sh.setLevel(options.verbose and logging.DEBUG or logging.INFO)
@@ -195,3 +205,19 @@ if __name__ == "__main__":
 
 	logger.info(options.curseforgeids)
 	logger.info(options.githubpaths)
+
+	addons = []
+	print(options.curseforgeids)
+	if options.curseforgeids:
+		for cfID in options.curseforgeids:
+			addons.append(Curseforge(cfID))
+
+	print(options.githubpaths)
+	if options.githubpaths:
+		for github_path in options.githubpaths:
+			addons.append(GitHub(github_path))
+
+	logger.info(addons)
+
+	for addon in addons:
+		print(addon.getFilesURL())

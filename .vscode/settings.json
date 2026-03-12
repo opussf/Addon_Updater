@@ -1,3 +1,4 @@
 {
-    "python.analysis.extraPaths": ["./packages", "./src"]
+    "python.analysis.extraPaths": ["./packages", "./src"],
+    "python.analysis.exclude": ["./packages", "**/__pycache__", "**/.*", "**/node_modules"]
 }

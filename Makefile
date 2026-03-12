@@ -8,7 +8,7 @@ all: test
 clean:
 	rm -rf packages
 	rm -rfv target
-	rm -rf src/__pycache__
+	rm -rf **/__pycache__
 
 packages/installed: requirements.txt requirements-dev.txt
 	$(PIP) install -r requirements-dev.txt --target=./packages --upgrade
