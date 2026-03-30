@@ -40,11 +40,12 @@ class DataStorage:
 				self.data = json.load(f)
 		self.logger.debug(f"Data:\n{self.data}")
 
-	def __save(self):
+	def save(self):
 		self.logger.debug("DataStorage: Performing a save")
 		# write to the file
 		with open(self.json_file, "w") as f:
 			json.dump(self.data, f, indent=4)
+
 
 class Cache:
 	path = "cache"
@@ -76,7 +77,6 @@ class Curseforge(AddonData):
 	https://www.curseforge.com/api/v1/mods/957044/files/7660240/download
 	"""
 	def __init__(self, cfID: int, logger: logging.Logger | None = None):
-		print(logger)
 		super().__init__(logger)
 		self.cfID = cfID
 		self.logger.debug(f"Starting {self.__class__.__name__} with {self.cfID}")
@@ -100,37 +100,24 @@ class GitHub(AddonData):
 
 
 class Installs:
-	def __init__(self, dataStorage):
+	def __init__(self, dataStorage: DataStorage):
 		self.logger = logging.getLogger("addon_updater")
 		self.dataStorage = dataStorage
-		self._wowpaths = []
-
-
-
-		# self.cursor = self.dataStorage.cursor
-		# try:
-		# 	self.cursor.execute("CREATE TABLE installs(id integer primary key, path string unique)")
-		# 	self.logger.debug("Installs creating table.")
-		# except sqlite3.OperationalError:
-		# 	pass
-		# for row in self.cursor.execute("SELECT id, path from installs;"):
-		# 	self.logger.debug("Row: %s" % (row,))
-		# 	self._wowpaths.append(row[1])
 
 	@property
 	def wowpaths(self):
-		print("Get property")
-		return self._wowpaths
+		print("Get property: wowpaths")
+		return self.dataStorage.data.wowpaths.keys()
 
 	@wowpaths.setter
-	def wowpaths(self, value):
-		self._wowpaths = value
-		# for path in self._wowpaths:
-		# 	try:
-		# 		self.cursor.execute("INSERT INTO installs (path) values(?)", (path,))
-		# 	except sqlite3.IntegrityError:
-		# 		pass
-		# self.dataStorage.commit()
+	def wowpaths(self, values: list):
+		print(self.dataStorage.data)
+		print(type(self.dataStorage.data))
+		if "wowpaths" not in self.dataStorage.data:
+			self.dataStorage.data["wowpaths"] = {}
+		for v in values:
+			self.dataStorage.data["wowpaths"][v] = True
+		self.dataStorage.save()
 
 
 class AddonInfo:
@@ -162,9 +149,9 @@ class AddonIterator:
 class WoWInstance:
 	""" WoWInstance Class
 	This class takes a path, confirms the path, exposes a few helper functions.
-	The path should point to the base install path.  folders like _retail_ should be here.
+	The path should point to the base install path.  This should point to something like _retail_.
 	"""
-	__subPaths = ["_retail_", "Interface", "Addons"]
+	__subPaths = ["Interface", "Addons"]
 
 	def __init__(self, path):
 		for subPathLen in range(len(self.__subPaths) + 1):
@@ -217,24 +204,24 @@ if __name__ == "__main__":
 		print("wowpath: %s (%s)" % (options.wowpaths, type(options.wowpaths)))
 		myInstalls.wowpaths = options.wowpaths
 
-	myWowPaths = myInstalls.wowpaths
-	logger.debug("myWowPaths: %s" % (myWowPaths,))
+	# myWowPaths = myInstalls.wowpaths
+	# logger.debug("myWowPaths: %s" % (myWowPaths,))
 
-	logger.info(options.curseforgeids)
-	logger.info(options.githubpaths)
+	# logger.info(options.curseforgeids)
+	# logger.info(options.githubpaths)
 
-	addons: list[AddonData] = []
-	print(options.curseforgeids)
-	if options.curseforgeids:
-		for cfID in options.curseforgeids:
-			addons.append(Curseforge(cfID))
+	# addons: list[AddonData] = []
+	# print(options.curseforgeids)
+	# if options.curseforgeids:
+	# 	for cfID in options.curseforgeids:
+	# 		addons.append(Curseforge(cfID))
 
-	print(options.githubpaths)
-	if options.githubpaths:
-		for github_path in options.githubpaths:
-			addons.append(GitHub(github_path))
+	# print(options.githubpaths)
+	# if options.githubpaths:
+	# 	for github_path in options.githubpaths:
+	# 		addons.append(GitHub(github_path))
 
-	logger.info(addons)
+	# logger.info(addons)
 
-	for addon in addons:
-		print(addon.getFilesURL())
+	# for addon in addons:
+	# 	print(addon.getFilesURL())
