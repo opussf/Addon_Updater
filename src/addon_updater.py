@@ -65,18 +65,29 @@ class AddonData:
 		if not logger:
 			self.logger = logging.getLogger("addon_updater")
 		self.cursor = DataStorage()
+		self.logger.debug(self.cursor)
+
+	def getFilesURL(self) -> str:
+		""" get the url to get a file list
+		"""
+		raise NotImplementedError
 
 
 class Curseforge(AddonData):
-	"""Just get something started"""
+	"""Just get something started
+	https://www.curseforge.com/api/v1/mods/957044/files/7660240/download
+	"""
 	def __init__(self, cfID: int, logger: logging.Logger | None = None):
 		print(logger)
 		super().__init__(logger)
 		self.cfID = cfID
 		self.logger.debug(f"Starting {self.__class__.__name__} with {self.cfID}")
 
+	def getMostRecentFileURL(self) -> str:
+		return ""
+
 	def getFilesURL(self) -> str:
-		pass
+		return f"https://www.curseforge.com/api/v1/mods/{self.cfID}/files/"
 
 
 class GitHub(AddonData):
@@ -85,6 +96,9 @@ class GitHub(AddonData):
 		super().__init__(logger)
 		self.path = path
 		self.logger.debug(f"Starting {self.__class__.__name__} with {self.path}")
+
+	# def getFilesURL(self) -> str:
+	# 	return ""
 
 
 class Installs:
@@ -206,7 +220,7 @@ if __name__ == "__main__":
 	logger.info(options.curseforgeids)
 	logger.info(options.githubpaths)
 
-	addons = []
+	addons: list[AddonData] = []
 	print(options.curseforgeids)
 	if options.curseforgeids:
 		for cfID in options.curseforgeids:

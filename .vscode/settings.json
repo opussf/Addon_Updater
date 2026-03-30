@@ -1,4 +1,9 @@
 {
     "python.analysis.extraPaths": ["./packages", "./src"],
-    "python.analysis.exclude": ["./packages", "**/__pycache__", "**/.*", "**/node_modules"]
+    "python.analysis.exclude": ["./packages", "**/__pycache__", "**/.*", "**/node_modules"],
+    "python.linting.mypyEnabled": true,
+    "python.linting.enabled": true,
+    "mypy-type-checker.args": [
+        "--python-executable=${command:python.interpreterPath}"
+    ]
 }
