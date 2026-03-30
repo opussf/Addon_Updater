@@ -100,6 +100,7 @@ class GitHub(AddonData):
 
 
 class Installs:
+	""" These are installs of addons for specific instances. """
 	def __init__(self, dataStorage: DataStorage):
 		self.logger = logging.getLogger("addon_updater")
 		self.dataStorage = dataStorage
@@ -153,15 +154,21 @@ class WoWInstance:
 	"""
 	__subPaths = ["Interface", "Addons"]
 
-	def __init__(self, path):
-		for subPathLen in range(len(self.__subPaths) + 1):
-			checkPath = os.path.join(path, *self.__subPaths[:subPathLen])
-			if not os.path.exists(checkPath):
-				print("%s does not exist." % (checkPath,))
-			self.addonPath = checkPath
-		self.path = path
-		self.addons = AddonIterator(self.addonPath)
-		print(self.addons)
+	def __init__(self, dataStorage: DataStorage, logger: logging.Logger | None = None):
+		self.logger = logger
+		if not logger:
+			self.logger = logging.getLogger("addon_updater")
+		self.logger.debug("WoWInstance.__init__")
+
+
+		# for subPathLen in range(len(self.__subPaths) + 1):
+		# 	checkPath = os.path.join(path, *self.__subPaths[:subPathLen])
+		# 	if not os.path.exists(checkPath):
+		# 		print("%s does not exist." % (checkPath,))
+		# 	self.addonPath = checkPath
+		# self.path = path
+		# self.addons = AddonIterator(self.addonPath)
+		# print(self.addons)
 
 	def something(self):
 		pass

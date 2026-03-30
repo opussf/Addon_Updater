@@ -7,11 +7,15 @@
 ~/.addon_updater/working/zip1/Files
 
 DB:
-Config:
-Wow Install location
+
+WoWInstalls:
+list of wow paths (need to have "Interface" as a sub directory to be valid)
+
 
 Addons:
 Service | addonID | current version
+
+
 
 
 
@@ -21,5 +25,8 @@ id | path
 
 Addons:
 installID | service | addonID | current version
+
+
+
 
 
