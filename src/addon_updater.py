@@ -105,21 +105,6 @@ class Installs:
 		self.logger = logging.getLogger("addon_updater")
 		self.dataStorage = dataStorage
 
-	@property
-	def wowpaths(self):
-		print("Get property: wowpaths")
-		return self.dataStorage.data.wowpaths.keys()
-
-	@wowpaths.setter
-	def wowpaths(self, values: list):
-		print(self.dataStorage.data)
-		print(type(self.dataStorage.data))
-		if "wowpaths" not in self.dataStorage.data:
-			self.dataStorage.data["wowpaths"] = {}
-		for v in values:
-			self.dataStorage.data["wowpaths"][v] = True
-		self.dataStorage.save()
-
 
 class AddonInfo:
 	""" Addon Info Class
@@ -159,19 +144,33 @@ class WoWInstance:
 		if not logger:
 			self.logger = logging.getLogger("addon_updater")
 		self.logger.debug("WoWInstance.__init__")
+		self.dataStorage = dataStorage
 
+	def is_valid_path(self, path: str) -> bool:
+		self.logger.debug(f"Is {path} valid?")
+		for sub_path_len in range(len(self.__subPaths) + 1):
+			check_path = os.path.join(path, *self.__subPaths[:sub_path_len])
+			self.logger.debug(f"\tCheck: {check_path}")
+			if not os.path.exists(check_path):
+				self.logger.debug(f"\tDoes not exist.")
+				return False
+		self.logger.debug("Seems valid")
+		return True
 
-		# for subPathLen in range(len(self.__subPaths) + 1):
-		# 	checkPath = os.path.join(path, *self.__subPaths[:subPathLen])
-		# 	if not os.path.exists(checkPath):
-		# 		print("%s does not exist." % (checkPath,))
-		# 	self.addonPath = checkPath
-		# self.path = path
-		# self.addons = AddonIterator(self.addonPath)
-		# print(self.addons)
+	@property
+	def wowpaths(self) -> list:
+		self.logger.debug("Get property: wowpaths")
+		return self.dataStorage.data["wowpaths"].keys()
 
-	def something(self):
-		pass
+	@wowpaths.setter
+	def wowpaths(self, values: list):
+		self.logger.debug(f"Setting wowpaths: {values}")
+		if "wowpaths" not in self.dataStorage.data:
+			self.dataStorage.data["wowpaths"] = {}
+		for path in values:
+			if self.is_valid_path(path):
+				self.dataStorage.data["wowpaths"][path] = True
+		self.dataStorage.save()
 
 
 def setupLogger():
@@ -206,10 +205,18 @@ if __name__ == "__main__":
 	logger = setupLogger()
 	logger.info("Starting")
 
-	myInstalls = Installs(DataStorage())
+	wow_paths = WoWInstance(DataStorage())
 	if options.wowpaths:
-		print("wowpath: %s (%s)" % (options.wowpaths, type(options.wowpaths)))
-		myInstalls.wowpaths = options.wowpaths
+		logger.debug(f"wowpath {options.wowpaths} ({type(options.wowpaths)})")
+		wow_paths.wowpaths = options.wowpaths
+
+
+
+
+	# myInstalls = Installs(DataStorage())
+	# if options.wowpaths:
+	# 	print("wowpath: %s (%s)" % (options.wowpaths, type(options.wowpaths)))
+	# 	myInstalls.wowpaths = options.wowpaths
 
 	# myWowPaths = myInstalls.wowpaths
 	# logger.debug("myWowPaths: %s" % (myWowPaths,))
