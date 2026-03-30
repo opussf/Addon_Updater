@@ -2,10 +2,10 @@
 
 from argparse import ArgumentParser
 import os
+import json
 import logging
-import sqlite3
-import aiohttp
-import asyncio
+# import aiohttp
+# import asyncio
 
 # import threading
 
@@ -13,8 +13,8 @@ import asyncio
 class DataStorage:
 	""" Singleton datastorage object """
 	_instance = None
-	basePath = "~/.addon_updater"
-	sqliteFilename = "addons.db"
+	base_path = "~/.addon_updater"
+	data_file = "addons.json"
 	# paths = ["cache","working"]
 
 	def __new__(cls, *args, **kwargs):
@@ -26,25 +26,25 @@ class DataStorage:
 		self.logger = logger
 		if not logger:
 			self.logger = logging.getLogger("addon_updater")
-		self.fullPath = os.path.expanduser(self.basePath)
-		if not os.path.exists(self.fullPath):
-			self.logger.debug("Creating path: %s" % (self.fullPath,))
-			os.makedirs(self.fullPath, exist_ok=True)
-		# Make the sqllite storage file, connection, and cursor
-		self.sqliteFile = os.path.join(self.fullPath, self.sqliteFilename)
-		self.connection = sqlite3.connect(self.sqliteFile)
+		self.full_path = os.path.expanduser(self.base_path)
+		if not os.path.exists(self.full_path):
+			self.logger.debug("Creating path: %s" % (self.full_path,))
+			os.makedirs(self.full_path, exist_ok=True)
+		# init self.data
+		self.data = {}
+		# read json file if it exists.
+		self.json_file = os.path.join(self.full_path, self.data_file)
 
-		self.cursor = self.connection.cursor()
-		self.cursor.execute("VACUUM")
-		self.connection.commit()
+		if os.path.exists(self.json_file):
+			with open(self.json_file, "r") as f:
+				self.data = json.load(f)
+		self.logger.debug(f"Data:\n{self.data}")
 
-	def commit(self):
-		self.logger.debug("commit")
-		self.connection.commit()
-
-	def __del__(self):
-		self.connection.close()
-
+	def __save(self):
+		self.logger.debug("DataStorage: Performing a save")
+		# write to the file
+		with open(self.json_file, "w") as f:
+			json.dump(self.data, f, indent=4)
 
 class Cache:
 	path = "cache"
@@ -64,8 +64,6 @@ class AddonData:
 		self.logger = logger
 		if not logger:
 			self.logger = logging.getLogger("addon_updater")
-		self.cursor = DataStorage()
-		self.logger.debug(self.cursor)
 
 	def getFilesURL(self) -> str:
 		""" get the url to get a file list
@@ -107,15 +105,17 @@ class Installs:
 		self.dataStorage = dataStorage
 		self._wowpaths = []
 
-		self.cursor = self.dataStorage.cursor
-		try:
-			self.cursor.execute("CREATE TABLE installs(id integer primary key, path string unique)")
-			self.logger.debug("Installs creating table.")
-		except sqlite3.OperationalError:
-			pass
-		for row in self.cursor.execute("SELECT id, path from installs;"):
-			self.logger.debug("Row: %s" % (row,))
-			self._wowpaths.append(row[1])
+
+
+		# self.cursor = self.dataStorage.cursor
+		# try:
+		# 	self.cursor.execute("CREATE TABLE installs(id integer primary key, path string unique)")
+		# 	self.logger.debug("Installs creating table.")
+		# except sqlite3.OperationalError:
+		# 	pass
+		# for row in self.cursor.execute("SELECT id, path from installs;"):
+		# 	self.logger.debug("Row: %s" % (row,))
+		# 	self._wowpaths.append(row[1])
 
 	@property
 	def wowpaths(self):
@@ -125,12 +125,12 @@ class Installs:
 	@wowpaths.setter
 	def wowpaths(self, value):
 		self._wowpaths = value
-		for path in self._wowpaths:
-			try:
-				self.cursor.execute("INSERT INTO installs (path) values(?)", (path,))
-			except sqlite3.IntegrityError:
-				pass
-		self.dataStorage.commit()
+		# for path in self._wowpaths:
+		# 	try:
+		# 		self.cursor.execute("INSERT INTO installs (path) values(?)", (path,))
+		# 	except sqlite3.IntegrityError:
+		# 		pass
+		# self.dataStorage.commit()
 
 
 class AddonInfo:
@@ -174,6 +174,7 @@ class WoWInstance:
 			self.addonPath = checkPath
 		self.path = path
 		self.addons = AddonIterator(self.addonPath)
+		print(self.addons)
 
 	def something(self):
 		pass
@@ -196,13 +197,15 @@ if __name__ == "__main__":
 	parser = ArgumentParser(description="WoW Addon Updater version ")
 
 	parser.add_argument("-p", "--paths", dest="wowpaths", nargs="*", metavar="PATH",
-			help="Path to look for addons.")
+			help="Path to look for addons")
 	parser.add_argument("--curseforge", dest="curseforgeids", nargs="*", metavar="ADDONID",
-			help="Add addon id from curseforge.")
+			help="Add addon id from curseforge")
 	parser.add_argument("--github", dest="githubpaths", nargs="*", metavar="REPOPATH",
-			help="Add addon from github.")
+			help="Add addon from github")
 	parser.add_argument("-v", "--verbose", dest="verbose", action="store_true", default=False,
-			help="Verbose mode.")
+			help="Verbose mode")
+	parser.add_argument("-x", "--execute", dest="dryrun", action="store_false", default=True,
+			help="Execute updates (default is dryrun mode)")
 
 	options = parser.parse_args()
 
