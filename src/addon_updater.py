@@ -4,8 +4,8 @@ from argparse import ArgumentParser
 import os
 import json
 import logging
-# import aiohttp
-# import asyncio
+import aiohttp
+import asyncio
 
 # import threading
 
@@ -48,6 +48,7 @@ class DataStorage:
 
 
 class Cache:
+	""" This piggybacks on the DataStorage for location """
 	path = "cache"
 
 	def __init__(self, dataStorage: DataStorage, logger: logging.Logger | None = None):
@@ -55,16 +56,19 @@ class Cache:
 		if not logger:
 			self.logger = logging.getLogger("addon_updater")
 		self.logger.debug("Cache.__init__")
+		self.dataStorage = dataStorage
 
 
 class AddonData:
 	"""Addons:
 		installID | service | addonID | current version
 	"""
-	def __init__(self, logger: logging.Logger | None = None):
+	def __init__(self, dataStorage: DataStorage, logger: logging.Logger | None = None):
 		self.logger = logger
 		if not logger:
 			self.logger = logging.getLogger("addon_updater")
+		self.logger.debug("AddonData.__init__")
+		self.dataStorage = dataStorage
 
 	def getFilesURL(self) -> str:
 		""" get the url to get a file list
@@ -76,8 +80,8 @@ class Curseforge(AddonData):
 	"""Just get something started
 	https://www.curseforge.com/api/v1/mods/957044/files/7660240/download
 	"""
-	def __init__(self, cfID: int, logger: logging.Logger | None = None):
-		super().__init__(logger)
+	def __init__(self, cfID: int, dataStorage: DataStorage, logger: logging.Logger | None = None):
+		super().__init__(dataStorage, logger)
 		self.cfID = cfID
 		self.logger.debug(f"Starting {self.__class__.__name__} with {self.cfID}")
 
@@ -90,8 +94,8 @@ class Curseforge(AddonData):
 
 class GitHub(AddonData):
 	"""Also to just get started"""
-	def __init__(self, path: str, logger: logging.Logger | None = None):
-		super().__init__(logger)
+	def __init__(self, path: str, dataStorage: DataStorage, logger: logging.Logger | None = None):
+		super().__init__(dataStorage, logger)
 		self.path = path
 		self.logger.debug(f"Starting {self.__class__.__name__} with {self.path}")
 
@@ -152,7 +156,7 @@ class WoWInstance:
 			check_path = os.path.join(path, *self.__subPaths[:sub_path_len])
 			self.logger.debug(f"\tCheck: {check_path}")
 			if not os.path.exists(check_path):
-				self.logger.debug(f"\tDoes not exist.")
+				self.logger.debug("\tDoes not exist.")
 				return False
 		self.logger.debug("Seems valid")
 		return True
@@ -189,6 +193,8 @@ def setupLogger():
 if __name__ == "__main__":
 	parser = ArgumentParser(description="WoW Addon Updater version ")
 
+	parser.add_argument("-x", "--execute", dest="dryrun", action="store_false", default=True,
+			help="Execute updates (default is dryrun mode)")
 	parser.add_argument("-p", "--paths", dest="wowpaths", nargs="*", metavar="PATH",
 			help="Path to look for addons")
 	parser.add_argument("--curseforge", dest="curseforgeids", nargs="*", metavar="ADDONID",
@@ -197,20 +203,31 @@ if __name__ == "__main__":
 			help="Add addon from github")
 	parser.add_argument("-v", "--verbose", dest="verbose", action="store_true", default=False,
 			help="Verbose mode")
-	parser.add_argument("-x", "--execute", dest="dryrun", action="store_false", default=True,
-			help="Execute updates (default is dryrun mode)")
 
 	options = parser.parse_args()
 
 	logger = setupLogger()
 	logger.info("Starting")
 
+	dryrun = options.dryrun
+	if dryrun:
+		logger.info("Running in Dryrun mode. Use --execute (-x) to enable updates.")
+
 	wow_paths = WoWInstance(DataStorage())
 	if options.wowpaths:
 		logger.debug(f"wowpath {options.wowpaths} ({type(options.wowpaths)})")
 		wow_paths.wowpaths = options.wowpaths
 
+	addons: list[AddonData] = []
+	print(options.curseforgeids)
+	if options.curseforgeids:
+		for cfID in options.curseforgeids:
+			addons.append(Curseforge(cfID, DataStorage()))
 
+	print(options.githubpaths)
+	if options.githubpaths:
+		for github_path in options.githubpaths:
+			addons.append(GitHub(github_path, DataStorage()))
 
 
 	# myInstalls = Installs(DataStorage())
@@ -224,16 +241,7 @@ if __name__ == "__main__":
 	# logger.info(options.curseforgeids)
 	# logger.info(options.githubpaths)
 
-	# addons: list[AddonData] = []
-	# print(options.curseforgeids)
-	# if options.curseforgeids:
-	# 	for cfID in options.curseforgeids:
-	# 		addons.append(Curseforge(cfID))
 
-	# print(options.githubpaths)
-	# if options.githubpaths:
-	# 	for github_path in options.githubpaths:
-	# 		addons.append(GitHub(github_path))
 
 	# logger.info(addons)
 

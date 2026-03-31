@@ -22,5 +22,5 @@ lint: packages/installed
 test: packages/installed lint
 	PYTHONPATH=packages:src $(PYTHON) -m pytest
 
-run: test
+run: lint
 	PYTHONPATH=packages:src $(PYTHON) src/addon_updater.py -v -p "/Applications/World of Warcraft/_retail_/" "./_retail_"  --curseforge 957044 --github opussf/Calc
