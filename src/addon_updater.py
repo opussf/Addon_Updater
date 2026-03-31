@@ -37,7 +37,12 @@ class DataStorage:
 
 		if os.path.exists(self.json_file):
 			with open(self.json_file, "r") as f:
-				self.data = json.load(f)
+				try:
+					self.data = json.load(f)
+				except json.decoder.JSONDecodeError as de:
+					self.logger.warning(f"{de}")
+					self.logger.warning("json file was probably just empty.")
+					self.logger.warning("creating new")
 		self.logger.debug(f"Data:\n{self.data}")
 
 	def save(self):
@@ -70,6 +75,10 @@ class AddonData:
 		self.logger.debug("AddonData.__init__")
 		self.dataStorage = dataStorage
 
+	async def updateCache(self, session: aiohttp.ClientSession):
+		""" get updated files into cache """
+		raise NotImplementedError
+
 	def getFilesURL(self) -> str:
 		""" get the url to get a file list
 		"""
@@ -79,11 +88,30 @@ class AddonData:
 class Curseforge(AddonData):
 	"""Just get something started
 	https://www.curseforge.com/api/v1/mods/957044/files/7660240/download
+	Stores: {cfid, }
 	"""
 	def __init__(self, cfID: int, dataStorage: DataStorage, logger: logging.Logger | None = None):
 		super().__init__(dataStorage, logger)
 		self.cfID = cfID
 		self.logger.debug(f"Starting {self.__class__.__name__} with {self.cfID}")
+
+		if "curseforge" not in self.dataStorage.data:
+			self.dataStorage.data["curseforge"] = []
+		found = False
+		for cfAddon in self.dataStorage.data["curseforge"]:
+			if cfAddon["cfID"] == self.cfID:
+				found = True
+				break
+		if not found:
+			self.dataStorage.data["curseforge"].append({"cfID": self.cfID})
+
+		self.dataStorage.save()
+
+	def getFilesURL(self) -> str:
+		return f"https://www.curseforge.com/api/v1/mods/{self.cfID}/files/"
+
+	async def updateCache(self, session: aiohttp.ClientSession):
+		self.logger.debug("Curseforge.updateCache")
 
 	def getMostRecentFileURL(self) -> str:
 		return ""
@@ -190,6 +218,14 @@ def setupLogger():
 	return logger
 
 
+async def process_all(addons: list[AddonData]):
+	async with aiohttp.ClientSession() as session:
+		tasks = []
+		for addon in addons:
+			tasks.append(addon.updateCache(session))
+		await asyncio.gather(*tasks)
+
+
 if __name__ == "__main__":
 	parser = ArgumentParser(description="WoW Addon Updater version ")
 
@@ -228,6 +264,8 @@ if __name__ == "__main__":
 	if options.githubpaths:
 		for github_path in options.githubpaths:
 			addons.append(GitHub(github_path, DataStorage()))
+
+	# asyncio.run(process_all(addons))
 
 
 	# myInstalls = Installs(DataStorage())
